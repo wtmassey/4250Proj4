@@ -6,7 +6,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 // setup
 const scene = new THREE.Scene();
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+const camera = new THREE.OrthographicCamera(-window.innerWidth / window.innerHeight, window.innerWidth / window.innerHeight, 1 , -1,2, 400);
 camera.position.set(12, 6, 14);
 camera.lookAt(0, 2, 0);
 
@@ -29,13 +29,13 @@ const matLightGrey = new THREE.MeshBasicMaterial({ color: 0xa0a8b0 });
 const matAccent    = new THREE.MeshBasicMaterial({ color: 0xf0c040 });
 const matBlack     = new THREE.MeshBasicMaterial({ color: 0x222222 });
 const matBlue      = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
+const matRed      = new THREE.MeshBasicMaterial({ color: 0xff3333 });
 
 
-
+// Spaceship vertices
 const vertices = new Float32Array([
   0, 0, 1,    // 0 middle bottom
-  
--6, 0, 1,   // 1 bottom left upper
+  -6, 0, 1,   // 1 bottom left upper
   -6, 8, 0,   // 2 left wing tip
   -5, 5, 0,   // 3
   -4, 4, 0,   // 4 left wing dip
@@ -62,7 +62,6 @@ const vertices = new Float32Array([
   0,5,-1    // 25
 ]);
 
-// define triangles by vertex indices (two faces per side)
 const indices = [
   2, 1, 3,
   3, 1, 4,
@@ -127,9 +126,60 @@ const matBlueWire = new THREE.MeshBasicMaterial({
   wireframe: true
 });
 
-const triangleMesh = new THREE.Mesh(geometry, matBlueWire);
-triangleMesh.position.y = 2; // lift it above the ground a bit
+const triangleMesh = new THREE.Mesh(geometry, matRed);
+triangleMesh.scale.set(0.5, 0.5, 0.5);
+triangleMesh.position.x = 7;
+triangleMesh.position.y = 2;
 scene.add(triangleMesh);
+
+// ROCKET Group
+const rocket = new THREE.Group();
+
+// NOSE (ConeGeometry)
+const noseGeom = new THREE.ConeGeometry(0.5, 1.2, 32);
+const noseMat = new THREE.MeshStandardMaterial({ color: 0xff3333 });
+const nose = new THREE.Mesh(noseGeom, matBlue);
+nose.position.y = 2.1;  // place above cylinder body
+rocket.add(nose);
+
+// BODY (CylinderGeometry)
+const bodyGeom = new THREE.CylinderGeometry(0.5, 0.5, 3, 32);
+const body = new THREE.Mesh(bodyGeom, matLightGrey);
+body.position.y = 0;
+rocket.add(body);
+
+// TORUS RING
+const ringGeom = new THREE.TorusGeometry(0.55, 0.07, 16, 40);
+const ring = new THREE.Mesh(ringGeom, matBlue);
+ring.rotation.x = Math.PI / 2;
+ring.position.y = 0.8;
+rocket.add(ring);
+
+// FINS
+function createFin() {
+    const finGeom = new THREE.TetrahedronGeometry(0.3); // size of fin
+    const fin = new THREE.Mesh(finGeom, matRed);
+
+    fin.scale.set(1, 4, 0.2);
+
+    return fin;
+}
+
+// Create 4 fins around base
+for (let i = 0; i < 4; i++) {
+    const fin = createFin();
+    fin.rotation.y = (Math.PI / 2) * i; 
+    fin.position.y = -1.5;  // bottom of cylinder
+    fin.position.x = 0.5 * Math.cos(i * Math.PI / 2);   // move to edge
+    fin.position.z = 0.5 * Math.cos(i * Math.PI / 2 + Math.PI / 2);
+    fin.rotation.y = (Math.PI / 2) * i;  
+    rocket.add(fin);
+}
+
+// Final placement
+rocket.position.y = 2.25;
+scene.add(rocket);
+
 
 // Render loop & resize
 function onResize() {
