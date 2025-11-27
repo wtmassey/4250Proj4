@@ -24,35 +24,36 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
+// Enable shadows
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 
-// Add grid for reference
-const grid = new THREE.GridHelper(100, 40, 0x666666, 0x444444);
-grid.position.y = 0.001;
-scene.add(grid);
-
-// Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambientLight);
-
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(10, 10, 10);
 scene.add(directionalLight);
+
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.width = 1024;
+directionalLight.shadow.mapSize.height = 1024;
+directionalLight.shadow.camera.near = 1;
+directionalLight.shadow.camera.far = 50;
 
 const backLight = new THREE.DirectionalLight(0x4444ff, 0.3);
 backLight.position.set(-10, -5, -10);
 scene.add(backLight);
 
 // Materials
-const matDarkGrey = new THREE.MeshBasicMaterial({ color: 0x444b52 });
-const matLightGrey = new THREE.MeshBasicMaterial({ color: 0xa0a8b0 });
-const matAccent = new THREE.MeshBasicMaterial({ color: 0xf0c040 });
-const matBlack = new THREE.MeshBasicMaterial({ color: 0x222222 });
-const matBlue = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
-const matRed = new THREE.MeshBasicMaterial({ color: 0xff4444 });
-const matGreen = new THREE.MeshBasicMaterial({ color: 0x44ff44 });
+const matDarkGrey = new THREE.MeshStandardMaterial({ color: 0x444b52, metalness: 0.7, roughness: 0.4 });
+const matLightGrey = new THREE.MeshStandardMaterial({ color: 0xa0a8b0, metalness: 0.9, roughness: 0.3 });
+const matAccent = new THREE.MeshStandardMaterial({ color: 0xf0c040, metalness: 0.5, roughness: 0.2 });
+const matBlack = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.5 });
+const matBlue = new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.6, roughness: 0.3 });
+const matRed = new THREE.MeshStandardMaterial({ color: 0xff4444, metalness: 0.7, roughness: 0.3 });
+const matGreen = new THREE.MeshStandardMaterial({ color: 0x44ff44, metalness: 0.7, roughness: 0.3 });
 
 /*
     Space Station- Composite Object
@@ -77,7 +78,7 @@ function createSpaceStation() {
         module.rotation.y = angle;
         station.add(module);
 
-        // Add end caps (small cubes) at the end of each module
+        // Add end caps at the end of each module
         const capGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
         const cap = new THREE.Mesh(capGeometry, matBlue);
         cap.position.x = Math.cos(angle) * 4;
@@ -144,7 +145,7 @@ function createSatellite() {
         0.5, -1.0, -0.866,  // 11
     ]);
 
-    // Define faces using vertex indices (each face is a triangle)
+    // Define faces using vertex indices
     const indices = [
         // Top face
         0, 1, 2,
@@ -220,9 +221,7 @@ function createSatellite() {
     return satellite;
 }
 
-/*
-    Add stars to the background
- */
+//Add stars to the background
 function addStars() {
     const starGeometry = new THREE.BufferGeometry();
     const starMaterial = new THREE.PointsMaterial({ 
@@ -247,13 +246,171 @@ function addStars() {
 const spaceStation = createSpaceStation();
 spaceStation.position.set(-8, 2, 0);
 scene.add(spaceStation);
+spaceStation.traverse(obj => { if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }});
 
 const satellite = createSatellite();
 satellite.position.set(8, 2, 0);
 scene.add(satellite);
+satellite.traverse(obj => { if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }});
 
 //Add stars
 addStars();
+
+// Adds spaceship custom mesh object
+const userVertices = new Float32Array([
+    0, 0, 1,    // 0 middle bottom
+    -6, 0, 1,   // 1 bottom left upper
+    -6, 8, 0,   // 2 left wing tip
+    -5, 5, 0,   // 3
+    -4, 4, 0,   // 4 left wing dip
+    -3, 5, 0,   // 5
+    -1, 11, 0,  // 6
+    0, 13, 0,   // 7 nose tip
+    1, 11, 0,   // 8
+    3, 5, 0,   // 9
+    4, 4, 0,   // 10
+    5, 5, 0,   // 11
+    6, 8, 0,   // 12
+    6, 0, 1,   // 13 bottom right upper
+    0, 0, -1,  // 14 middle bottom lower
+    -6, 0, -1, // 15 bottom left lower
+    6, 0, -1,  // 16 bottom right lower
+    -1, 2, 2,  // 17 back left cockpit
+    -2, 5, 2,  // 18
+    -1, 8, 2,  // 19 front left cockpit
+    -1, 4, 3,  // 20
+    1, 4, 3,   // 21
+    1, 8, 2,   // 22 front right cockpit
+    2, 5, 2,   // 23
+    1, 2, 2,   // 24 back right cockpit
+    0,5,-1    // 25
+]);
+
+const userIndices = [
+    2, 1, 3,
+    3, 1, 4,
+    1,0,4,
+    4, 0, 5,
+    5,0,17,
+    6,5,19,
+    7,6,19,
+    9, 0, 10,
+    10, 0, 13,
+    11,10,13,
+    13, 12, 11,
+    1, 15, 16,
+    13, 1, 16,
+    18, 17, 20, //cock pit start
+    19,18,20,
+    19,20,21,
+    19,21,22,
+    22,21,23,
+    23,21,24,
+    21,20,24,
+    20,17,24, //cock pit end
+    7,19,22,
+    24,17,0,
+    5,17,0,
+    5,17,18,
+    5,18,19,
+    6,5,19,
+    7,6,19,
+    19,7,22,
+    8,7,22,
+    9,8,22,
+    9,22,23,
+    9,23,24,
+    0,9,24,
+    12,13,16,
+    1,2,15,
+    2,3,15,
+    3,4,15,
+    4,14,15,
+    4,5,14,
+    14,5,25,
+    5,6,25,
+    6,7,25,
+    7,8,25,
+    8,9,25,
+    9,14,25,
+    9,10,14,
+    14,10,16,
+    10,11,16,
+    11,12,16
+];
+
+const userGeometry = new THREE.BufferGeometry();
+userGeometry.setAttribute('position', new THREE.BufferAttribute(userVertices, 3));
+userGeometry.setIndex(userIndices);
+userGeometry.computeVertexNormals();
+
+const matShipMetal = new THREE.MeshStandardMaterial({ color: 0xa0a8b0, metalness: 0.9, roughness: 0.3 });
+const userMesh = new THREE.Mesh(userGeometry, matShipMetal);
+userMesh.position.set(0, 2, 8); // Offset to avoid overlap
+userMesh.scale.set(0.5, 0.5, 0.5); // Scale down spaceship
+scene.add(userMesh);
+userMesh.castShadow = true;
+userMesh.receiveShadow = true;
+
+
+// Asteroid
+function createAsteroid(radius = 1, detail = 2) {
+    const geometry = new THREE.IcosahedronGeometry(radius, detail);
+    // Randomly perturb vertices for a rocky look
+    const position = geometry.attributes.position;
+    for (let i = 0; i < position.count; i++) {
+        const v = new THREE.Vector3().fromBufferAttribute(position, i);
+        v.multiplyScalar(1 + (Math.random() - 0.5) * 0.3);
+        position.setXYZ(i, v.x, v.y, v.z);
+    }
+    geometry.computeVertexNormals();
+    return geometry;
+}
+const asteroidGeometry = createAsteroid(1, 2);
+const asteroidMaterial = new THREE.MeshPhongMaterial({ color: 0x888888, flatShading: true });
+const asteroidMesh = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
+asteroidMesh.position.set(8, 2, -8);
+scene.add(asteroidMesh);
+asteroidMesh.castShadow = true;
+asteroidMesh.receiveShadow = true;
+
+// Earth and Moon textured spheres
+const textureLoader = new THREE.TextureLoader();
+const earthTexture = textureLoader.load('earth.png');
+const moonTexture = textureLoader.load('moon.jpg');
+
+const earthMaterial = new THREE.MeshPhongMaterial({ map: earthTexture });
+const earthGeometry = new THREE.SphereGeometry(1.5, 32, 32);
+const earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
+earthMesh.position.set(-12, 3, 8);
+earthMesh.castShadow = true;
+earthMesh.receiveShadow = true;
+scene.add(earthMesh);
+
+const moonMaterial = new THREE.MeshPhongMaterial({ map: moonTexture });
+const moonGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+moonMesh.position.set(-10, 4, 10);
+moonMesh.castShadow = true;
+moonMesh.receiveShadow = true;
+scene.add(moonMesh);
+
+// Glowing sphere in top left
+const glowSphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+const glowSphereMaterial = new THREE.MeshStandardMaterial({ color: 0xffffee, emissive: 0xffffee, emissiveIntensity: 10, metalness: 0.05, roughness: 0.1 });
+const glowSphere = new THREE.Mesh(glowSphereGeometry, glowSphereMaterial);
+glowSphere.position.set(-15, 8, -10);
+glowSphere.castShadow = true;
+glowSphere.receiveShadow = true;
+scene.add(glowSphere);
+
+// Adds PointLight at the same position for actual lighting effect
+const glowLight = new THREE.PointLight(0xffffee, 30, 100, 2);
+glowLight.position.copy(glowSphere.position);
+glowLight.castShadow = true;
+glowLight.shadow.mapSize.width = 2048;
+glowLight.shadow.mapSize.height = 2048;
+scene.add(glowLight);
 
 // Handle window resize
 function onResize() {
@@ -273,5 +430,12 @@ window.addEventListener("resize", onResize);
 // Animation loop
 renderer.setAnimationLoop(() => {
     controls.update();
+    if (animateKnot) {
+        knotMesh.rotation.x += 0.02;
+        knotMesh.rotation.y += 0.03;
+    }
+    if (animateEarth) {
+        earthMesh.rotation.y += 0.01;
+    }
     renderer.render(scene, camera);
 });
