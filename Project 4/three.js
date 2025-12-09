@@ -254,7 +254,8 @@ const matShipMetal = new THREE.MeshStandardMaterial({
     roughnessMap: metalRoughness,
     normalMap: metalNormal,
     metalness: 0.8,
-    roughness: 0.4
+    roughness: 0.4,
+    side: THREE.DoubleSide
 });
 
 // 360 Background
@@ -324,8 +325,9 @@ function createUfoMesh() {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setIndex(indices);
-    geometry.computeVertexNormals();
     const mesh = new THREE.Mesh(geometry, matShipMetal);
+    geometry.computeVertexNormals();
+    geometry.normalizeNormals();
     mesh.position.set(0, 2, -2);
     mesh.scale.set(1.5, 1.5, 1.5);
     mesh.castShadow = true;
