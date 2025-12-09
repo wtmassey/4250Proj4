@@ -148,24 +148,24 @@ function createSatellite() {
     // Define faces using vertex indices
     const indices = [
         // Top face
-        0, 1, 2,
-        0, 2, 3,
-        0, 3, 4,
-        0, 4, 5,
+        0, 2, 1,
+        0, 3, 2,
+        0, 4, 3,
+        0, 5, 4,
         
         // Bottom face
-        6, 8, 7,
-        6, 9, 8,
-        6, 10, 9,
-        6, 11, 10,
+        6, 7, 8,
+        6, 8, 9,
+        6, 9, 10,
+        6, 10, 11,
         
         // Side faces
-        0, 6, 7,  0, 7, 1,   // Face 1
-        1, 7, 8,  1, 8, 2,   // Face 2
-        2, 8, 9,  2, 9, 3,   // Face 3
-        3, 9, 10, 3, 10, 4,  // Face 4
-        4, 10, 11, 4, 11, 5, // Face 5
-        5, 11, 6, 5, 6, 0,   // Face 6
+        0, 7, 6,  0, 1, 7,   // Face 1
+        1, 8, 7,  1, 2, 8,   // Face 2
+        2, 9, 8,  2, 3, 9,   // Face 3
+        3, 10, 9, 3, 4, 10,  // Face 4
+        4, 11, 10, 4, 5, 11, // Face 5
+        5, 6, 11, 5, 0, 6,   // Face 6
     ];
 
     const bodyGeometry = new THREE.BufferGeometry();
@@ -186,7 +186,9 @@ function createSatellite() {
 
     const panelIndices = [
         0, 1, 2,
-        0, 2, 3
+        0, 2, 3,
+        1, 0, 2,
+        2, 0, 3
     ];
 
     const panelGeometry = new THREE.BufferGeometry();
@@ -599,5 +601,9 @@ window.addEventListener('keydown', (e) => {
         earthMesh.position.copy(defaultState.earthPosition);
         glowSphere.position.copy(defaultState.glowSpherePosition);
         glowLight.position.copy(defaultState.glowSpherePosition);
+
+        //Reset sound
+        audio.pause();
+        audio.currentTime = 0;
     }
 });
