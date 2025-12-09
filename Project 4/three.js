@@ -3,7 +3,7 @@
 
 // Setup
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000022);
+//scene.background = new THREE.Color(0x000022);
 
 // Camera
 const aspect = window.innerWidth / window.innerHeight;
@@ -42,9 +42,9 @@ directionalLight.shadow.mapSize.height = 1024;
 directionalLight.shadow.camera.near = 1;
 directionalLight.shadow.camera.far = 50;
 
-const backLight = new THREE.DirectionalLight(0x4444ff, 0.3);
-backLight.position.set(-10, -5, -10);
-scene.add(backLight);
+//const backLight = new THREE.DirectionalLight(0x4444ff, 0.3);
+//backLight.position.set(-10, -5, -10);
+//scene.add(backLight);
 
 // Materials
 const matDarkGrey = new THREE.MeshStandardMaterial({ color: 0x444b52, metalness: 0.7, roughness: 0.4 });
@@ -63,14 +63,14 @@ function createSpaceStation() {
 
     // 1. Central Hub - Sphere
     const hubGeometry = new THREE.SphereGeometry(1.5, 32, 32);
-    const hub = new THREE.Mesh(hubGeometry, matLightGrey);
+    const hub = new THREE.Mesh(hubGeometry, matShipMetal);
     station.add(hub);
 
     // 2. Connecting Modules - Cylinders
     const moduleGeometry = new THREE.CylinderGeometry(0.4, 0.4, 3, 16);
 
     for (let i = 0; i < 4; i++) {
-        const module = new THREE.Mesh(moduleGeometry, matDarkGrey);
+        const module = new THREE.Mesh(moduleGeometry, matShipMetal);
         const angle = (i * Math.PI) / 2;
         module.position.x = Math.cos(angle) * 2.5;
         module.position.z = Math.sin(angle) * 2.5;
@@ -242,6 +242,34 @@ function addStars() {
     scene.add(stars);
 }
 
+//Metallic ship material
+const textureLoader = new THREE.TextureLoader();
+const metalAlbedo = textureLoader.load("metal-compartments_albedo.png");
+const metalRoughness = textureLoader.load("metal-compartments_roughness.png");
+const metalNormal = textureLoader.load("metal-compartments_normal-ogl.png");
+const matShipMetal = new THREE.MeshStandardMaterial({
+    map: metalAlbedo,
+    roughnessMap: metalRoughness,
+    normalMap: metalNormal,
+    metalness: 0.8,
+    roughness: 0.4
+});
+
+// 360 Background
+const skyGeo = new THREE.SphereGeometry(50, 60, 40);  // HUGE sphere
+const skyTexture = new THREE.TextureLoader().load("360spacebackground.jpg");
+
+skyTexture.mapping = THREE.EquirectangularReflectionMapping;
+
+const skyMat = new THREE.MeshBasicMaterial({
+    map: skyTexture,
+    side: THREE.BackSide // IMPORTANT — render inside of sphere!
+});
+
+const skySphere = new THREE.Mesh(skyGeo, skyMat);
+scene.add(skySphere);
+
+
 // Create and add objects to scene
 const spaceStation = createSpaceStation();
 spaceStation.position.set(-8, 2, 0);
@@ -344,7 +372,26 @@ userGeometry.setAttribute('position', new THREE.BufferAttribute(userVertices, 3)
 userGeometry.setIndex(userIndices);
 userGeometry.computeVertexNormals();
 
-const matShipMetal = new THREE.MeshStandardMaterial({ color: 0xa0a8b0, metalness: 0.9, roughness: 0.3 });
+
+
+// Temporary UVs: project texture from the top (simple fix)
+const uvs = [];
+
+for (let i = 0; i < userVertices.length; i += 3) {
+    const x = userVertices[i];
+    const y = userVertices[i + 1];
+    const z = userVertices[i + 2];
+
+    // Simple planar projection (XZ -> UV)
+    const u = (x + 10) / 20;
+    const v = (z + 10) / 20;
+
+    uvs.push(u, v);
+}
+
+userGeometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+
+
 const userMesh = new THREE.Mesh(userGeometry, matShipMetal);
 userMesh.position.set(0, 2, 8); // Offset to avoid overlap
 userMesh.scale.set(0.5, 0.5, 0.5); // Scale down spaceship
@@ -375,7 +422,6 @@ asteroidMesh.castShadow = true;
 asteroidMesh.receiveShadow = true;
 
 // Earth and Moon textured spheres
-const textureLoader = new THREE.TextureLoader();
 const earthTexture = textureLoader.load('earth.png');
 const moonTexture = textureLoader.load('moon.jpg');
 
@@ -395,21 +441,26 @@ moonMesh.castShadow = true;
 moonMesh.receiveShadow = true;
 scene.add(moonMesh);
 
-// Glowing sphere in top left
-const glowSphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-const glowSphereMaterial = new THREE.MeshStandardMaterial({ color: 0xffffee, emissive: 0xffffee, emissiveIntensity: 10, metalness: 0.05, roughness: 0.1 });
+// Glowing sphere (visual only)
+const glowSphereGeometry = new THREE.SphereGeometry(1.4, 32, 32);
+const glowSphereMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffee
+});
 const glowSphere = new THREE.Mesh(glowSphereGeometry, glowSphereMaterial);
 glowSphere.position.set(-15, 8, -10);
-glowSphere.castShadow = true;
-glowSphere.receiveShadow = true;
+glowSphere.castShadow = false;
+glowSphere.receiveShadow = false;
 scene.add(glowSphere);
 
-// Adds PointLight at the same position for actual lighting effect
-const glowLight = new THREE.PointLight(0xffffee, 30, 100, 2);
+// Point light (actual lighting)
+const glowLight = new THREE.PointLight(0xffffee, 8, 50, 1.5);
 glowLight.position.copy(glowSphere.position);
 glowLight.castShadow = true;
-glowLight.shadow.mapSize.width = 2048;
-glowLight.shadow.mapSize.height = 2048;
+
+glowLight.shadow.mapSize.set(2048, 2048);
+glowLight.shadow.bias = -0.0005;
+glowLight.shadow.normalBias = 0.02;
+
 scene.add(glowLight);
 
 // Handle window resize
