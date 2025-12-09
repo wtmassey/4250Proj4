@@ -549,5 +549,9 @@ window.addEventListener('keydown', (e) => {
         earthMesh.position.copy(defaultState.earthPosition);
         glowSphere.position.copy(defaultState.glowSpherePosition);
         glowLight.position.copy(defaultState.glowSpherePosition);
+
+        //Reset sound
+        audio.pause();
+        audio.currentTime = 0;
     }
 });
