@@ -496,6 +496,10 @@ renderer.setAnimationLoop(() => {
 let animateKnot = false;
 let animateEarth = false;
 
+// Sound effect for animation
+const audio = new Audio('spacesound.mp3');
+audio.preload = 'auto';
+
 // Store default positions and rotations for restoration
 const defaultState = {
     cameraPosition: new THREE.Vector3(20, 15, 20),
@@ -512,9 +516,16 @@ const defaultState = {
 window.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'a') {
         animateEarth = !animateEarth;
-        if (animateEarth && window.knotSound) {
-            window.knotSound.currentTime = 0;
-            window.knotSound.play();
+        if (animateEarth) {
+            audio.currentTime = 0;
+            try {
+                audio.play();
+            } catch (err) {
+                console.warn('Audio play failed:', err);
+            }
+        } else {
+            audio.pause();
+            audio.currentTime = 0;
         }
     }
     if (e.key.toLowerCase() === 'b') {
