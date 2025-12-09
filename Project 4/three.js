@@ -286,6 +286,57 @@ satellite.traverse(obj => { if (obj.isMesh) { obj.castShadow = true; obj.receive
 //Add stars
 addStars();
 
+// UFO surface of revolution mesh
+function createUfoMesh() {
+    // Profile curve for UFO (dome + disk)
+    const profile = [
+        [0, 0.8],      // Top center
+        [0.45, 0.7],
+        [0.7, 0.5],
+        [1.0, 0.35],   // Wider disk edge
+        [1.0, 0.18],
+        [0.7, 0.08],
+        [0.45, 0],
+        [0, 0]         // Bottom center
+    ];
+    const slices = 48;
+    const vertices = [];
+    const indices = [];
+    // Generate vertices by rotating profile around Y axis
+    for (let i = 0; i < profile.length; i++) {
+        for (let j = 0; j <= slices; j++) {
+            const theta = (j / slices) * 2 * Math.PI;
+            const x = profile[i][0] * Math.cos(theta);
+            const z = profile[i][0] * Math.sin(theta);
+            const y = profile[i][1];
+            vertices.push(x, y, z);
+        }
+    }
+    // Generate indices for triangles
+    for (let i = 0; i < profile.length - 1; i++) {
+        for (let j = 0; j < slices; j++) {
+            const curr = i * (slices + 1) + j;
+            const next = (i + 1) * (slices + 1) + j;
+            indices.push(curr, next, curr + 1);
+            indices.push(next, next + 1, curr + 1);
+        }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry, matShipMetal);
+    mesh.position.set(0, 2, -2);
+    mesh.scale.set(1.5, 1.5, 1.5);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+}
+
+// Add UFO mesh to scene
+const ufoMesh = createUfoMesh();
+scene.add(ufoMesh);
+
 // Adds spaceship custom mesh object
 const userVertices = new Float32Array([
     0, 0, 1,    // 0 middle bottom
@@ -464,58 +515,6 @@ glowLight.shadow.bias = -0.0005;
 glowLight.shadow.normalBias = 0.02;
 
 scene.add(glowLight);
-
-// UFO surface of revolution mesh
-function createUfoMesh() {
-    // Profile curve for UFO (dome + disk)
-    const profile = [
-        [0, 0.8],      // Top center
-        [0.45, 0.7],
-        [0.7, 0.5],
-        [1.0, 0.35],   // Wider disk edge
-        [1.0, 0.18],
-        [0.7, 0.08],
-        [0.45, 0],
-        [0, 0]         // Bottom center
-    ];
-    const slices = 48;
-    const vertices = [];
-    const indices = [];
-    // Generate vertices by rotating profile around Y axis
-    for (let i = 0; i < profile.length; i++) {
-        for (let j = 0; j <= slices; j++) {
-            const theta = (j / slices) * 2 * Math.PI;
-            const x = profile[i][0] * Math.cos(theta);
-            const z = profile[i][0] * Math.sin(theta);
-            const y = profile[i][1];
-            vertices.push(x, y, z);
-        }
-    }
-    // Generate indices for triangles
-    for (let i = 0; i < profile.length - 1; i++) {
-        for (let j = 0; j < slices; j++) {
-            const curr = i * (slices + 1) + j;
-            const next = (i + 1) * (slices + 1) + j;
-            indices.push(curr, next, curr + 1);
-            indices.push(next, next + 1, curr + 1);
-        }
-    }
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-    const material = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, metalness: 0.1, roughness: 0.9 });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(0, 2, -2);
-    mesh.scale.set(1.5, 1.5, 1.5);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    return mesh;
-}
-
-// Add UFO mesh to scene
-const ufoMesh = createUfoMesh();
-scene.add(ufoMesh);
 
 // Handle window resize
 function onResize() {
