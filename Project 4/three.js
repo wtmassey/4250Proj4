@@ -439,3 +439,51 @@ renderer.setAnimationLoop(() => {
     }
     renderer.render(scene, camera);
 });
+
+let animateKnot = false;
+let animateEarth = false;
+
+// Store default positions and rotations for restoration
+const defaultState = {
+    cameraPosition: new THREE.Vector3(20, 15, 20),
+    cameraTarget: new THREE.Vector3(0, 0, 0),
+    earthRotationY: 0,
+    userMeshPosition: new THREE.Vector3(0, 2, 8),
+    userMeshScale: new THREE.Vector3(0.5, 0.5, 0.5),
+    asteroidPosition: new THREE.Vector3(8, 2, -8),
+    moonPosition: new THREE.Vector3(-10, 4, 10),
+    earthPosition: new THREE.Vector3(-12, 3, 8),
+    glowSpherePosition: new THREE.Vector3(-15, 8, -10)
+};
+
+window.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'a') {
+        animateEarth = !animateEarth;
+        if (animateEarth && window.knotSound) {
+            window.knotSound.currentTime = 0;
+            window.knotSound.play();
+        }
+    }
+    if (e.key.toLowerCase() === 'b') {
+        // Restore camera position and controls
+        camera.position.copy(defaultState.cameraPosition);
+        camera.lookAt(defaultState.cameraTarget);
+        controls.target.copy(defaultState.cameraTarget);
+        controls.update();
+        // Reset animated object rotation and positions
+        if (typeof knotMesh !== 'undefined') {
+            knotMesh.rotation.x = 0;
+            knotMesh.rotation.y = 0;
+        }
+        animateKnot = false;
+        animateEarth = false;
+        earthMesh.rotation.y = defaultState.earthRotationY;
+        userMesh.position.copy(defaultState.userMeshPosition);
+        userMesh.scale.copy(defaultState.userMeshScale);
+        asteroidMesh.position.copy(defaultState.asteroidPosition);
+        moonMesh.position.copy(defaultState.moonPosition);
+        earthMesh.position.copy(defaultState.earthPosition);
+        glowSphere.position.copy(defaultState.glowSpherePosition);
+        glowLight.position.copy(defaultState.glowSpherePosition);
+    }
+});
